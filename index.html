@@ -1778,37 +1778,11 @@
   let origLabel = '';
 
   async function resolveChatId(){
-    const cached = localStorage.getItem('sacros_tg_chat');
-    if(cached) return cached;
-    try {
-      const r = await fetch('https://api.telegram.org/bot' + TG_TOKEN + '/getUpdates');
-      const data = await r.json();
-      const updates = (data && data.result) || [];
-      for(let i = updates.length - 1; i >= 0; i--){
-        const m = updates[i].message || updates[i].channel_post || updates[i].my_chat_member;
-        if(m && m.chat && (m.chat.type === 'group' || m.chat.type === 'supergroup' || m.chat.type === 'channel')){
-          localStorage.setItem('sacros_tg_chat', m.chat.id);
-          return m.chat.id;
-        }
-      }
-      // fallback to any chat (e.g. private)
-      for(let i = updates.length - 1; i >= 0; i--){
-        const m = updates[i].message || updates[i].channel_post;
-        if(m && m.chat){
-          localStorage.setItem('sacros_tg_chat', m.chat.id);
-          return m.chat.id;
-        }
-      }
-    } catch(e){}
-    return null;
+    return '-5289380426';
   }
 
   async function sendTelegram(text){
     const chatId = await resolveChatId();
-    if(!chatId){
-      // No chat yet — user must add bot + ping it once
-      throw new Error('chat-not-found');
-    }
     const r = await fetch('https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -1816,16 +1790,7 @@
     });
     const data = await r.json();
     if(!data.ok){
-      // chat id may have changed (e.g. group upgraded to supergroup) — clear cache and retry once
-      localStorage.removeItem('sacros_tg_chat');
-      const id2 = await resolveChatId();
-      if(!id2) throw new Error('tg-failed:' + (data.description||''));
-      const r2 = await fetch('https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({chat_id: id2, text: text, parse_mode:'HTML', disable_web_page_preview:true})
-      });
-      const d2 = await r2.json();
-      if(!d2.ok) throw new Error('tg-failed:' + (d2.description||''));
+      throw new Error('tg-failed:' + (data.description||''));
     }
   }
 
