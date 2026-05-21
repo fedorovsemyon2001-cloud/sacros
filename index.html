@@ -703,6 +703,89 @@
   .reveal-up{opacity:0;transform:translateY(60px);transition:opacity 1.3s ease, transform 1.3s cubic-bezier(.2,.7,.1,1);transition-delay:var(--d,0ms)}
   .reveal-up.in{opacity:1;transform:none}
 
+  /* MOBILE SLIDERS — collections / ritual / reviews */
+  @media (max-width:720px){
+    .col-grid, .rit-grid, .reviews-grid{
+      display:flex;
+      flex-direction:row;
+      grid-template-columns:none;
+      overflow-x:auto;
+      overflow-y:hidden;
+      scroll-snap-type:x mandatory;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      gap:0;
+      /* break out of .wrap's 22px side padding so the slider is edge-to-edge */
+      margin-left:-22px;
+      margin-right:-22px;
+      padding-left:22px;
+      padding-right:22px;
+      scroll-padding-left:22px;
+    }
+    .col-grid::-webkit-scrollbar,
+    .rit-grid::-webkit-scrollbar,
+    .reviews-grid::-webkit-scrollbar{display:none;height:0}
+
+    .col-grid > .col-card,
+    .rit-grid > .rit-step,
+    .reviews-grid > .review{
+      flex:0 0 86%;
+      min-width:86%;
+      scroll-snap-align:start;
+    }
+
+    .col-grid > .col-card{
+      border-right:1px solid var(--line-ink);
+      border-top:none !important;
+      border-left:none !important;
+      border-bottom:none;
+    }
+    .col-grid > .col-card:last-child{border-right:none}
+
+    .rit-grid > .rit-step{
+      border-right:1px solid var(--line-ink) !important;
+      border-bottom:none !important;
+      min-height:420px;
+    }
+    .rit-grid > .rit-step:last-child{border-right:none !important}
+
+    .reviews-grid > .review{
+      border-right:1px solid var(--line) !important;
+      border-bottom:none !important;
+      min-height:460px;
+    }
+    .reviews-grid > .review:last-child{border-right:none !important}
+
+    /* hide reveal-up offset on slider children so horizontal scroll snap works
+       even before they animate in */
+    .col-grid > .reveal-up,
+    .rit-grid > .reveal-up,
+    .reviews-grid > .reveal-up{transform:none;opacity:1}
+
+    /* pagination dots inserted by JS */
+    .slider-dots{
+      display:flex;justify-content:center;align-items:center;gap:9px;
+      padding:20px 22px 4px;margin:0 -22px;
+    }
+    .slider-dots .dot{
+      width:5px;height:5px;border-radius:50%;
+      background:var(--ink);opacity:.22;
+      transition:opacity .35s, transform .35s, background .35s;
+    }
+    .slider-dots .dot.on{opacity:1;transform:scale(1.5);background:var(--red)}
+    .reviews-section .slider-dots .dot{background:var(--cream);opacity:.25}
+    .reviews-section .slider-dots .dot.on{background:var(--red);opacity:1}
+
+    /* small "swipe" hint label */
+    .slider-hint{
+      display:flex;align-items:center;justify-content:flex-end;gap:10px;
+      font-family:var(--mono);font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;
+      color:var(--ink-soft);padding:0 0 14px;
+    }
+    .reviews-section .slider-hint{color:var(--cream-dim)}
+    .slider-hint .ln{flex:0 0 28px;height:1px;background:currentColor;opacity:.4}
+  }
+
 </style>
 </head>
 <body>
@@ -796,7 +879,8 @@
     <video autoplay muted loop playsinline preload="auto" id="heroVideo">
       <!-- Preview env requires signed URL; production uses the relative path below.
            On publish, replace the src with: assets/hero-bg.mp4 -->
-<source src="https://raw.githubusercontent.com/fedorovsemyon2001-cloud/sacros/main/bg_video_v_mp_.mp4" type="video/mp4">
+      <source src="https://d5164bad-4d0f-4d21-be85-f28087698939.claudeusercontent.com/v1/design/projects/d5164bad-4d0f-4d21-be85-f28087698939/serve/assets/hero-bg.mp4?t=5dc581b8cad4c40d52132c8b2c97fc7a1ce515d5076e36bd8293c24ff6b46f01.593b983f-aa01-41d3-b3e2-db4d1fd3d1cc.9233062e-5c07-4c19-a9c3-5125dba00530.1779294167&direct=1" type="video/mp4">
+      <source src="assets/hero-bg.mp4" type="video/mp4">
     </video>
     <div class="hero-tag-video"><span class="rec"></span>Афон · LOOP</div>
   </div>
@@ -1844,6 +1928,67 @@
     closeBtn.addEventListener('click', close);
     lb.addEventListener('click', (e)=>{ if(e.target === lb) close(); });
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') close(); });
+  })();
+
+  // ====== MOBILE SLIDERS (collections / ritual / reviews) ======
+  (function(){
+    const mql = window.matchMedia('(max-width: 720px)');
+    const targets = [
+      {sel:'.col-grid',     hint:'Свайп · 3 коллекции'},
+      {sel:'.rit-grid',     hint:'Свайп · 4 шага'},
+      {sel:'.reviews-grid', hint:'Свайп · 3 отзыва'}
+    ];
+
+    targets.forEach(({sel, hint})=>{
+      const root = document.querySelector(sel);
+      if(!root) return;
+      const kids = [...root.children];
+      // hint above slider
+      const hintEl = document.createElement('div');
+      hintEl.className = 'slider-hint';
+      hintEl.innerHTML = '<span class="ln"></span><span>'+hint+' →</span>';
+      root.before(hintEl);
+      // dots below slider
+      const dots = document.createElement('div');
+      dots.className = 'slider-dots';
+      kids.forEach((_,i)=>{
+        const d = document.createElement('span');
+        d.className = 'dot' + (i===0 ? ' on' : '');
+        d.addEventListener('click', ()=>{
+          kids[i].scrollIntoView({behavior:'smooth', inline:'start', block:'nearest'});
+        });
+        dots.appendChild(d);
+      });
+      root.after(dots);
+
+      // observe which slide is visible
+      const dotEls = [...dots.children];
+      const obs = new IntersectionObserver((entries)=>{
+        // pick the most-visible entry from the batch
+        let best = null;
+        entries.forEach(e=>{
+          if(!best || e.intersectionRatio > best.intersectionRatio) best = e;
+        });
+        if(!best || !best.isIntersecting) return;
+        const i = kids.indexOf(best.target);
+        if(i < 0) return;
+        dotEls.forEach((d,j)=> d.classList.toggle('on', j===i));
+      }, {root, threshold:[.4, .6, .8]});
+      kids.forEach(k => obs.observe(k));
+    });
+
+    // ScrollIntoView on dot click can scroll the page vertically too on some
+    // browsers — guard by re-snapping horizontally if that happens.
+    // (Most modern browsers handle inline:'start' + block:'nearest' fine.)
+
+    function syncDisplay(){
+      const on = mql.matches;
+      document.querySelectorAll('.slider-hint, .slider-dots').forEach(el=>{
+        el.style.display = on ? '' : 'none';
+      });
+    }
+    syncDisplay();
+    mql.addEventListener?.('change', syncDisplay);
   })();
 </script>
 </body>
